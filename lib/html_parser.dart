@@ -40,6 +40,11 @@ typedef CustomRender = dynamic Function(
   Widget parsedChild,
 );
 
+enum HtmlParserError {
+  styles,
+  tree
+}
+
 class HtmlParser extends StatelessWidget {
   final Key? key;
   final dom.Document htmlData;
@@ -62,6 +67,7 @@ class HtmlParser extends StatelessWidget {
   final ScrollPhysics? scrollPhysics;
 
   final Map<String, Size> cachedImageSizes = {};
+  final Widget Function(HtmlParserError)? errorMessage;
 
   HtmlParser({
     required this.key,
@@ -80,6 +86,7 @@ class HtmlParser extends StatelessWidget {
     required this.tagsList,
     required this.navigationDelegateForIframe,
     this.selectionControls,
+    this.errorMessage,
     this.scrollPhysics,
   })  : this._onAnchorTap = onAnchorTap != null
           ? onAnchorTap
@@ -104,17 +111,40 @@ class HtmlParser extends StatelessWidget {
     }
     StyledElement inlineStyledTree = _applyInlineStyles(externalCssStyledTree ?? lexedTree, onCssParseError);
     StyledElement customStyledTree = _applyCustomStyles(style, inlineStyledTree);
-    StyledElement cascadedStyledTree = _cascadeStyles(style, customStyledTree);
+    StyledElement? cascadedStyledTree1;
+    try {
+      cascadedStyledTree1 = _cascadeStyles(
+          style, customStyledTree);
+    }catch(e){
+      print('Styles error $e');
+      if(errorMessage != null){
+        return errorMessage!(HtmlParserError.styles);
+      }
+      return Text('Invalid HTML');
+    }
+    StyledElement cascadedStyledTree = cascadedStyledTree1!;
+
     StyledElement cleanedTree = cleanTree(cascadedStyledTree);
-    InlineSpan parsedTree = parseTree(
-      RenderContext(
-        buildContext: context,
-        parser: this,
-        tree: cleanedTree,
-        style: cleanedTree.style,
-      ),
-      cleanedTree,
-    );
+
+    InlineSpan? parsedTree1;
+    try {
+      parsedTree1 = parseTree(
+        RenderContext(
+          buildContext: context,
+          parser: this,
+          tree: cleanedTree,
+          style: cleanedTree.style,
+        ),
+        cleanedTree,
+      );
+    }catch(e){
+      print('Tree error $e');
+      if(errorMessage != null){
+        return errorMessage!(HtmlParserError.tree);
+      }
+      return Text('Invalid HTML');
+    }
+    InlineSpan parsedTree = parsedTree1!;
 
     // This is the final scaling that assumes any other StyledText instances are
     // using textScaleFactor = 1.0 (which is the default). This ensures the correct

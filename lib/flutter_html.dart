@@ -63,6 +63,7 @@ class Html extends StatelessWidget {
     this.onImageTap,
     this.tagsList = const [],
     this.style = const {},
+    this.errorMessage,
     this.navigationDelegateForIframe,
   })  : document = null,
         assert(data != null),
@@ -84,6 +85,7 @@ class Html extends StatelessWidget {
     this.onImageTap,
     this.tagsList = const [],
     this.style = const {},
+    this.errorMessage,
     this.navigationDelegateForIframe,
   })  : data = null,
         assert(document != null),
@@ -142,6 +144,8 @@ class Html extends StatelessWidget {
   /// to use NavigationDelegate.
   final NavigationDelegate? navigationDelegateForIframe;
 
+  final Widget Function(HtmlParserError)? errorMessage;
+
   static List<String> get tags => new List<String>.from(STYLED_ELEMENTS)
     ..addAll(INTERACTABLE_ELEMENTS)
     ..addAll(REPLACED_ELEMENTS)
@@ -158,6 +162,7 @@ class Html extends StatelessWidget {
     return Container(
       width: width,
       child: HtmlParser(
+        errorMessage: errorMessage,
         key: _anchorKey,
         htmlData: doc,
         onLinkTap: onLinkTap,
